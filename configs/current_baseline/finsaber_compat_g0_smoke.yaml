@@ -1,0 +1,122 @@
+data_source: finsaber
+finsaber_price_path: ../复现/FINSABER-main/data/price/all_sp500_prices_2000_2024_delisted_include.csv
+assets:
+  - TSLA
+  - NFLX
+  - AMZN
+  - MSFT
+indicators: [sma_5, sma_10, rsi_14, vol_5]
+global_features: [cash, portfolio_value]
+task_description: "finsaber_compat_g0_smoke: FINSABER-compatible continuous-action DRL baseline only."
+start_date: "2000-01-03"
+end_date: "2024-12-31"
+seed: 42
+
+experiment:
+  phase: E7
+  claim_id: finsaber_compat_g0_smoke
+  hypothesis_id: h_finsaber_compat_g0_smoke
+  frozen: false
+
+eval_protocol: temporal_split
+window_setup: selected_4
+benchmark_range:
+  start: "2019-01-01"
+  end: "2023-01-01"
+prior_years_max: 3
+
+days: 252
+initial_cash: 100000
+max_trade: 1000
+fee_rate: 0.001
+
+algorithm: td3
+eval_algorithms: [a2c, ppo, sac, td3]
+groups: [G0_baseline]
+
+intrinsic_w: 0.02
+intrinsic_scale_mode: bounded_100
+intrinsic_timing: pre_action_state
+n_small: 32
+n_full: 128
+warmup_ratio: 0.05
+seeds: [1]
+
+use_finagent_signal: false
+finagent_weight: 0.0
+
+universe:
+  mode: historical_dynamic
+  n_assets: 5
+  include_delisted: true
+  restrict_to_config_assets: false
+  allow_auto_asset_pool: true
+  selection_strategy: momentum_factor
+  momentum_days: 100
+  skip_days: 21
+
+execution:
+  drl_backend: finsaber_compat
+  decision_price: close_t
+  fill_price: open_t1
+  finsaber_compat:
+    hmax: 1000
+    reward_scaling: 1.0e-4
+    use_turbulence: true
+    use_vix: false
+    deterministic_eval: true
+    eval_episodes: 1
+
+evaluation:
+  eval_freq_mode: relative
+  eval_points_min: 5
+
+bootstrap:
+  enabled: false
+  n_resamples: 200
+  alpha: 0.05
+  random_seed: 42
+
+walk_forward:
+  enabled: true
+  aggregate: mean_std
+  min_days_per_split: 20
+  windows:
+    - train:
+        start: "2019-01-01"
+        end: "2020-12-31"
+      val:
+        start: "2021-01-01"
+        end: "2021-12-31"
+      test:
+        start: "2022-01-01"
+        end: "2022-12-31"
+
+td3:
+  start_timesteps: 20
+  batch_size: 64
+  expl_noise: 0.1
+  discount: 0.99
+  tau: 0.005
+  policy_noise: 0.1
+  noise_clip: 0.25
+  policy_freq: 2
+  hidden_dim: 256
+
+llm:
+  enabled: false
+  model: disabled
+  k: 0
+  iterations: 0
+
+sb3:
+  total_timesteps: 128
+  learning_rate: 0.0003
+  gamma: 0.99
+  batch_size: 64
+  ent_coef: 0.0
+  eval_episodes: 1
+
+diagnostics:
+  dump_sb3_action_trace: true
+  robust_ratio_floor: 1.0

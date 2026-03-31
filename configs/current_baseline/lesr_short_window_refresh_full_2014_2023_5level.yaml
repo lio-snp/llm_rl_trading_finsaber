@@ -1,0 +1,535 @@
+﻿data_source: finsaber
+finsaber_price_path: ../复现/FINSABER-main/data/price/all_sp500_prices_2000_2024_delisted_include.csv
+assets:
+  - TSLA
+  - NFLX
+  - AMZN
+  - MSFT
+indicators: [sma_5, sma_10, rsi_14, vol_5]
+global_features: [cash, portfolio_value]
+task_description: "lesr_short_window_refresh_full_2014_2023_5level: quarterly LESR refresh on 2014-2023 with 18m train, 3m val, 3m test, step 3m; use 5-level discrete actions for a2c/ppo and continuous-action penalty for sac/td3."
+start_date: "2000-01-03"
+end_date: "2024-12-31"
+seed: 42
+
+experiment:
+  phase: E6
+  claim_id: lesr_short_window_refresh_full_2014_2023_5level
+  hypothesis_id: h_lesr_short_window_refresh_full_2014_2023_5level
+  frozen: false
+
+eval_protocol: temporal_split
+window_setup: selected_4
+benchmark_range:
+  start: "2014-01-01"
+  end: "2024-01-01"
+prior_years_max: 3
+
+days: 252
+initial_cash: 100000
+max_trade: 1000
+fee_rate: 0.001
+
+algorithm: td3
+eval_algorithms: [a2c, ppo, sac, td3]
+
+intrinsic_w: 0.02
+intrinsic_w_schedule: [0.02]
+intrinsic_scale_mode: bounded_100
+intrinsic_timing: pre_action_state
+intrinsic_postprocess:
+  mode: centered
+  eps: 1.0e-6
+
+n_small: 40
+n_full: 504
+warmup_ratio: 0.05
+seeds: [1, 2, 3]
+
+groups:
+  - G0_baseline
+  - G1_revise_only
+  - G2_intrinsic_only
+  - G3_revise_intrinsic
+
+algo_tuning:
+  a2c:
+    ent_coef: 0.005
+    n_steps: 32
+  ppo:
+    ent_coef: 0.005
+    n_steps: 64
+    batch_size: 64
+  sac:
+    ent_coef: auto_0.1
+    target_entropy: auto
+    batch_size: 128
+    learning_rate: 0.0002
+  td3:
+    actor_max_action: 50
+    policy_noise: 0.1
+    noise_clip: 0.25
+    policy_freq: 2
+
+use_finagent_signal: false
+finagent_weight: 0.0
+
+universe:
+  mode: historical_dynamic
+  n_assets: 5
+  include_delisted: true
+  restrict_to_config_assets: false
+  allow_auto_asset_pool: true
+  selection_strategy: momentum_factor
+  momentum_days: 100
+  skip_days: 21
+
+execution:
+  decision_price: close_t
+  fill_price: open_t1
+  discrete_action_levels: 5
+  continuous_action_bound_penalty:
+    coef: 0.05
+    threshold: 0.8
+    power: 2.0
+
+evaluation:
+  eval_freq_mode: relative
+  eval_points_min: 5
+
+bootstrap:
+  enabled: true
+  n_resamples: 2000
+  alpha: 0.05
+  random_seed: 42
+
+walk_forward:
+  enabled: true
+  aggregate: mean_std
+  min_days_per_split: 20
+  windows:
+    - train:
+        start: "2012-04-01"
+        end: "2013-09-30"
+      val:
+        start: "2013-10-01"
+        end: "2013-12-31"
+      test:
+        start: "2014-01-01"
+        end: "2014-03-31"
+    - train:
+        start: "2012-07-01"
+        end: "2013-12-31"
+      val:
+        start: "2014-01-01"
+        end: "2014-03-31"
+      test:
+        start: "2014-04-01"
+        end: "2014-06-30"
+    - train:
+        start: "2012-10-01"
+        end: "2014-03-31"
+      val:
+        start: "2014-04-01"
+        end: "2014-06-30"
+      test:
+        start: "2014-07-01"
+        end: "2014-09-30"
+    - train:
+        start: "2013-01-01"
+        end: "2014-06-30"
+      val:
+        start: "2014-07-01"
+        end: "2014-09-30"
+      test:
+        start: "2014-10-01"
+        end: "2014-12-31"
+    - train:
+        start: "2013-04-01"
+        end: "2014-09-30"
+      val:
+        start: "2014-10-01"
+        end: "2014-12-31"
+      test:
+        start: "2015-01-01"
+        end: "2015-03-31"
+    - train:
+        start: "2013-07-01"
+        end: "2014-12-31"
+      val:
+        start: "2015-01-01"
+        end: "2015-03-31"
+      test:
+        start: "2015-04-01"
+        end: "2015-06-30"
+    - train:
+        start: "2013-10-01"
+        end: "2015-03-31"
+      val:
+        start: "2015-04-01"
+        end: "2015-06-30"
+      test:
+        start: "2015-07-01"
+        end: "2015-09-30"
+    - train:
+        start: "2014-01-01"
+        end: "2015-06-30"
+      val:
+        start: "2015-07-01"
+        end: "2015-09-30"
+      test:
+        start: "2015-10-01"
+        end: "2015-12-31"
+    - train:
+        start: "2014-04-01"
+        end: "2015-09-30"
+      val:
+        start: "2015-10-01"
+        end: "2015-12-31"
+      test:
+        start: "2016-01-01"
+        end: "2016-03-31"
+    - train:
+        start: "2014-07-01"
+        end: "2015-12-31"
+      val:
+        start: "2016-01-01"
+        end: "2016-03-31"
+      test:
+        start: "2016-04-01"
+        end: "2016-06-30"
+    - train:
+        start: "2014-10-01"
+        end: "2016-03-31"
+      val:
+        start: "2016-04-01"
+        end: "2016-06-30"
+      test:
+        start: "2016-07-01"
+        end: "2016-09-30"
+    - train:
+        start: "2015-01-01"
+        end: "2016-06-30"
+      val:
+        start: "2016-07-01"
+        end: "2016-09-30"
+      test:
+        start: "2016-10-01"
+        end: "2016-12-31"
+    - train:
+        start: "2015-04-01"
+        end: "2016-09-30"
+      val:
+        start: "2016-10-01"
+        end: "2016-12-31"
+      test:
+        start: "2017-01-01"
+        end: "2017-03-31"
+    - train:
+        start: "2015-07-01"
+        end: "2016-12-31"
+      val:
+        start: "2017-01-01"
+        end: "2017-03-31"
+      test:
+        start: "2017-04-01"
+        end: "2017-06-30"
+    - train:
+        start: "2015-10-01"
+        end: "2017-03-31"
+      val:
+        start: "2017-04-01"
+        end: "2017-06-30"
+      test:
+        start: "2017-07-01"
+        end: "2017-09-30"
+    - train:
+        start: "2016-01-01"
+        end: "2017-06-30"
+      val:
+        start: "2017-07-01"
+        end: "2017-09-30"
+      test:
+        start: "2017-10-01"
+        end: "2017-12-31"
+    - train:
+        start: "2016-04-01"
+        end: "2017-09-30"
+      val:
+        start: "2017-10-01"
+        end: "2017-12-31"
+      test:
+        start: "2018-01-01"
+        end: "2018-03-31"
+    - train:
+        start: "2016-07-01"
+        end: "2017-12-31"
+      val:
+        start: "2018-01-01"
+        end: "2018-03-31"
+      test:
+        start: "2018-04-01"
+        end: "2018-06-30"
+    - train:
+        start: "2016-10-01"
+        end: "2018-03-31"
+      val:
+        start: "2018-04-01"
+        end: "2018-06-30"
+      test:
+        start: "2018-07-01"
+        end: "2018-09-30"
+    - train:
+        start: "2017-01-01"
+        end: "2018-06-30"
+      val:
+        start: "2018-07-01"
+        end: "2018-09-30"
+      test:
+        start: "2018-10-01"
+        end: "2018-12-31"
+    - train:
+        start: "2017-04-01"
+        end: "2018-09-30"
+      val:
+        start: "2018-10-01"
+        end: "2018-12-31"
+      test:
+        start: "2019-01-01"
+        end: "2019-03-31"
+    - train:
+        start: "2017-07-01"
+        end: "2018-12-31"
+      val:
+        start: "2019-01-01"
+        end: "2019-03-31"
+      test:
+        start: "2019-04-01"
+        end: "2019-06-30"
+    - train:
+        start: "2017-10-01"
+        end: "2019-03-31"
+      val:
+        start: "2019-04-01"
+        end: "2019-06-30"
+      test:
+        start: "2019-07-01"
+        end: "2019-09-30"
+    - train:
+        start: "2018-01-01"
+        end: "2019-06-30"
+      val:
+        start: "2019-07-01"
+        end: "2019-09-30"
+      test:
+        start: "2019-10-01"
+        end: "2019-12-31"
+    - train:
+        start: "2018-04-01"
+        end: "2019-09-30"
+      val:
+        start: "2019-10-01"
+        end: "2019-12-31"
+      test:
+        start: "2020-01-01"
+        end: "2020-03-31"
+    - train:
+        start: "2018-07-01"
+        end: "2019-12-31"
+      val:
+        start: "2020-01-01"
+        end: "2020-03-31"
+      test:
+        start: "2020-04-01"
+        end: "2020-06-30"
+    - train:
+        start: "2018-10-01"
+        end: "2020-03-31"
+      val:
+        start: "2020-04-01"
+        end: "2020-06-30"
+      test:
+        start: "2020-07-01"
+        end: "2020-09-30"
+    - train:
+        start: "2019-01-01"
+        end: "2020-06-30"
+      val:
+        start: "2020-07-01"
+        end: "2020-09-30"
+      test:
+        start: "2020-10-01"
+        end: "2020-12-31"
+    - train:
+        start: "2019-04-01"
+        end: "2020-09-30"
+      val:
+        start: "2020-10-01"
+        end: "2020-12-31"
+      test:
+        start: "2021-01-01"
+        end: "2021-03-31"
+    - train:
+        start: "2019-07-01"
+        end: "2020-12-31"
+      val:
+        start: "2021-01-01"
+        end: "2021-03-31"
+      test:
+        start: "2021-04-01"
+        end: "2021-06-30"
+    - train:
+        start: "2019-10-01"
+        end: "2021-03-31"
+      val:
+        start: "2021-04-01"
+        end: "2021-06-30"
+      test:
+        start: "2021-07-01"
+        end: "2021-09-30"
+    - train:
+        start: "2020-01-01"
+        end: "2021-06-30"
+      val:
+        start: "2021-07-01"
+        end: "2021-09-30"
+      test:
+        start: "2021-10-01"
+        end: "2021-12-31"
+    - train:
+        start: "2020-04-01"
+        end: "2021-09-30"
+      val:
+        start: "2021-10-01"
+        end: "2021-12-31"
+      test:
+        start: "2022-01-01"
+        end: "2022-03-31"
+    - train:
+        start: "2020-07-01"
+        end: "2021-12-31"
+      val:
+        start: "2022-01-01"
+        end: "2022-03-31"
+      test:
+        start: "2022-04-01"
+        end: "2022-06-30"
+    - train:
+        start: "2020-10-01"
+        end: "2022-03-31"
+      val:
+        start: "2022-04-01"
+        end: "2022-06-30"
+      test:
+        start: "2022-07-01"
+        end: "2022-09-30"
+    - train:
+        start: "2021-01-01"
+        end: "2022-06-30"
+      val:
+        start: "2022-07-01"
+        end: "2022-09-30"
+      test:
+        start: "2022-10-01"
+        end: "2022-12-31"
+    - train:
+        start: "2021-04-01"
+        end: "2022-09-30"
+      val:
+        start: "2022-10-01"
+        end: "2022-12-31"
+      test:
+        start: "2023-01-01"
+        end: "2023-03-31"
+    - train:
+        start: "2021-07-01"
+        end: "2022-12-31"
+      val:
+        start: "2023-01-01"
+        end: "2023-03-31"
+      test:
+        start: "2023-04-01"
+        end: "2023-06-30"
+    - train:
+        start: "2021-10-01"
+        end: "2023-03-31"
+      val:
+        start: "2023-04-01"
+        end: "2023-06-30"
+      test:
+        start: "2023-07-01"
+        end: "2023-09-30"
+    - train:
+        start: "2022-01-01"
+        end: "2023-06-30"
+      val:
+        start: "2023-07-01"
+        end: "2023-09-30"
+      test:
+        start: "2023-10-01"
+        end: "2023-12-31"
+
+td3:
+  start_timesteps: 100
+  batch_size: 64
+  expl_noise: 0.1
+  discount: 0.99
+  tau: 0.005
+  policy_noise: 0.1
+  noise_clip: 0.25
+  policy_freq: 2
+  hidden_dim: 256
+  state_norm:
+    mode: zscore
+    eps: 1.0e-6
+    log_volume: true
+  actor_max_action: 50
+
+llm:
+  enabled: true
+  base_url: https://api.deepseek.com
+  model: deepseek-chat
+  temperature: 0.2
+  max_tokens: 3500
+  request_timeout_s: 90
+  k: 2
+  iterations: 6
+  iteration_mode: per_algorithm_branches
+  branch_parallel_workers: 3
+  max_retries: 4
+  use_env_proxy: false
+  max_failed_calls: 16
+  consensus_promotion:
+    support_min: 1
+  candidate_scoring:
+    performance_mode: delta_to_g0
+    performance_metric: score
+    performance_weight: 1.0
+    lipschitz_weight: 0.2
+    lipschitz_quantile: 0.9
+    lipschitz_max_pairs: 256
+    selection_seed_count: 1
+  generation_target: scenario_family
+  scenario_family:
+    enabled: true
+    families:
+      - trend_follow
+      - mean_revert
+      - risk_shield
+    candidates_per_family_per_iter: 1
+  system_prompt_mode: trading_lesr_prior_v1
+  system_prompt_disable_priors: false
+  system_prompt_extra: "Quarterly LESR refresh on the full 2014-2023 test coverage. Use per-algorithm independent G1/G2/G3 promotion objectives; select each algo's cores from its own history only; allow support_min=1. Use 5-level discrete actions for a2c/ppo and continuous-action penalty for sac/td3."
+
+sb3:
+  total_timesteps: 504
+  learning_rate: 0.0003
+  gamma: 0.99
+  batch_size: 64
+  ent_coef: 0.0
+  eval_episodes: 1
+
+diagnostics:
+  dump_sb3_action_trace: true
+  robust_ratio_floor: 1.0
+

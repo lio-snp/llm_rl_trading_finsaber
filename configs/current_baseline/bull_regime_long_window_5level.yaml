@@ -1,0 +1,42 @@
+base_config: configs/current_baseline/lesr_short_window_refresh_full_2014_2023_5level.yaml
+
+experiment:
+  phase: E1
+  claim_id: bull_regime_long_window_5level
+  hypothesis_id: h_bull_regime_long_window_5level
+  task_description: "Bull-only regime specialist with long bull-date windows. Build causal bull labels on full history, keep only bull dates, then run LESR on bull-only walk-forward windows."
+
+regime_labeling:
+  label_start: "2000-01-03"
+  label_end: "2024-12-31"
+  lookback_days: 63
+  persistence_days: 5
+  target_regime: bull
+
+bull_windowing:
+  train_bars: 504
+  val_bars: 126
+  test_bars: 126
+  step_bars: 126
+
+overrides:
+  eval_algorithms: [a2c, ppo, sac, td3]
+  seeds: [1, 2, 3]
+  intrinsic_w: 0.02
+  intrinsic_w_schedule: [0.02]
+  n_small: 40
+  n_full: 504
+  execution:
+    discrete_action_levels: 5
+    continuous_action_bound_penalty:
+      coef: 0.05
+      threshold: 0.8
+      power: 2.0
+  llm:
+    k: 2
+    iterations: 6
+    branch_parallel_workers: 3
+    candidate_scoring:
+      selection_seed_count: 1
+    consensus_promotion:
+      support_min: 1
