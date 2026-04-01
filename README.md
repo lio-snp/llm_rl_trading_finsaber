@@ -36,10 +36,32 @@ To place the full CSV into the expected repo location:
 
 - `python scripts/prepare_finsaber_full_data.py /path/to/all_sp500_prices_2000_2024_delisted_include.csv`
 
-Example commands:
+Minimal startup steps for collaborators:
 
-- `python scripts/run.py demo --config configs/current_baseline/finsaber_native_composite_collab_full.yaml`
-- `python scripts/run.py demo --config configs/current_baseline/finsaber_native_composite_collab_smoke.yaml`
+1. Set the DeepSeek API key in the shell before launching either config.
+2. For the full config, make sure the full CSV has already been placed at `data/full/all_sp500_prices_2000_2024_delisted_include.csv`, either manually or with `scripts/prepare_finsaber_full_data.py`.
+
+PowerShell smoke run:
+
+```powershell
+$env:DEEPSEEK_API_KEY="your_key"
+python scripts/run.py demo --config configs/current_baseline/finsaber_native_composite_collab_smoke.yaml
+```
+
+PowerShell full run:
+
+```powershell
+$env:DEEPSEEK_API_KEY="your_key"
+python scripts/prepare_finsaber_full_data.py "path\\to\\all_sp500_prices_2000_2024_delisted_include.csv"
+python scripts/run.py demo --config configs/current_baseline/finsaber_native_composite_collab_full.yaml
+```
+
+If the full CSV has already been copied into `data/full/`, you can skip the preparation step and launch the full config directly:
+
+```powershell
+$env:DEEPSEEK_API_KEY="your_key"
+python scripts/run.py demo --config configs/current_baseline/finsaber_native_composite_collab_full.yaml
+```
 
 ## Kept in repo
 
