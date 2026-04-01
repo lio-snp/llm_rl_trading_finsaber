@@ -3,7 +3,13 @@ __pycache__/
 .pytest_cache/
 
 runs/
-/data/
+/data/*
+!/data/collab/
+!/data/collab/**
+!/data/full/
+!/data/full/README.md
+/data/raw/
+/data/processed/
 
 .DS_Store
 ._*
